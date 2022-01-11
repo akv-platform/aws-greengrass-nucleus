@@ -158,17 +158,6 @@ public class KernelConfigResolver {
         for (ComponentIdentifier resolvedComponentsToDeploy : componentsToDeploy) {
             ComponentRecipe componentRecipe = componentStore.getPackageRecipe(resolvedComponentsToDeploy);
 
-            if (Coerce.toBoolean(deviceConfiguration.getInterpolateComponentConfiguration())) {
-                Object existingConfiguration = ((Map) servicesConfig.get(resolvedComponentsToDeploy.getName()))
-                        .get(CONFIGURATION_CONFIG_KEY);
-
-                Object interpolatedConfiguration = interpolate(existingConfiguration, resolvedComponentsToDeploy,
-                        componentRecipe.getDependencies().keySet(), servicesConfig);
-
-                ((Map) servicesConfig.get(resolvedComponentsToDeploy.getName()))
-                        .put(CONFIGURATION_CONFIG_KEY, interpolatedConfiguration);
-            }
-
             Object existingLifecycle = ((Map) servicesConfig.get(resolvedComponentsToDeploy.getName()))
                     .get(SERVICE_LIFECYCLE_NAMESPACE_TOPIC);
 
@@ -363,12 +352,17 @@ public class KernelConfigResolver {
                 staticConfig.mergeMap(document.getTimestamp(), updateConfig);
             }
 
+            Map<String, Object> servicesConfig = new HashMap<>();
+
+            Map<String, Object> staticConfiguration = new HashMap<>();
+            staticConfiguration.put(CONFIGURATION_CONFIG_KEY, staticConfig.toPOJO());
+            servicesConfig.put(componentIdentifier.getName(), staticConfiguration);
             if (Coerce.toBoolean(deviceConfiguration.getInterpolateComponentConfiguration())) {
                 defaultConfig = (Map) interpolate(defaultConfig,
-                                componentIdentifier, componentRecipe.getDependencies().keySet(), staticConfig.toPOJO());
+                                componentIdentifier, componentRecipe.getDependencies().keySet(), servicesConfig);
                 if (Objects.nonNull(updateConfig)) {
                     updateConfig = (Map) interpolate(updateConfig,
-                            componentIdentifier, componentRecipe.getDependencies().keySet(), staticConfig.toPOJO());
+                            componentIdentifier, componentRecipe.getDependencies().keySet(), servicesConfig);
                 }
             }
 

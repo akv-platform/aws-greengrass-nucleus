@@ -594,6 +594,68 @@ class KernelConfigResolverTest {
     }
 
     @Test
+    void GIVEN_interpolate_config_set_WHEN_config_resolution_requested_THEN_only_configuration_from_recipe_and_deployment_got_interpolated_not_running_config()
+            throws Exception {
+        // GIVEN
+        ComponentIdentifier rootComponentIdentifier =
+                new ComponentIdentifier(TEST_INPUT_PACKAGE_A, new Semver("1.2", Semver.SemverType.NPM));
+        List<ComponentIdentifier> packagesToDeploy = Arrays.asList(rootComponentIdentifier);
+
+        ObjectNode node = OBJECT_MAPPER.createObjectNode();
+        node.put("paramA", "valueA");
+        node.put("interpolateFromRecipe", "{configuration:/paramA}");
+        ComponentRecipe rootComponentRecipe = getComponent(TEST_INPUT_PACKAGE_A, "1.2.0", Collections.emptyMap(),
+                node, "", null, null);
+
+        DeploymentPackageConfiguration rootPackageDeploymentConfig = DeploymentPackageConfiguration.builder()
+                .packageName(TEST_INPUT_PACKAGE_A)
+                .rootComponent(true)
+                .resolvedVersion("=1.2")
+                .configurationUpdateOperation(new ConfigurationUpdateOperation(
+                        new HashMap<String, Object>() {{
+                            put("interpolateFromDeployment", "{kernel:rootPath}");
+                        }}, new ArrayList<>()))
+                .build();
+        DeploymentDocument document = DeploymentDocument.builder()
+                .deploymentPackageConfigurationList(Collections.singletonList(rootPackageDeploymentConfig))
+                .timestamp(10_000L)
+                .build();
+        when(kernel.findServiceTopic(TEST_INPUT_PACKAGE_A)).thenReturn(config.lookupTopics(SERVICES_NAMESPACE_TOPIC,
+                TEST_INPUT_PACKAGE_A));
+        config.lookupTopics(SERVICES_NAMESPACE_TOPIC, TEST_INPUT_PACKAGE_A, CONFIGURATION_CONFIG_KEY)
+                .updateFromMap(Collections.singletonMap("interpolateFromRunningConfig", "{artifacts:path}"),
+                        new UpdateBehaviorTree(UpdateBehaviorTree.UpdateBehavior.MERGE, 9_000L));
+
+        when(componentStore.getPackageRecipe(rootComponentIdentifier)).thenReturn(rootComponentRecipe);
+        when(kernel.getMain()).thenReturn(mainService);
+        when(nucleusPaths.unarchiveArtifactPath(rootComponentIdentifier)).thenReturn(DUMMY_DECOMPRESSED_PATH_KEY);
+        when(nucleusPaths.rootPath()).thenReturn(DUMMY_ROOT_PATH);
+        when(mainService.getName()).thenReturn("main");
+        when(mainService.getDependencies()).thenReturn(Collections.emptyMap());
+        when(deviceConfiguration.getInterpolateComponentConfiguration()).thenReturn(config.lookup(
+                "interpolateComponentConfiguration").withValue(true));
+
+        // WHEN
+        KernelConfigResolver kernelConfigResolver = new KernelConfigResolver(componentStore, kernel, nucleusPaths,
+                deviceConfiguration);
+        Map<String, Object> resolvedConfig =
+                kernelConfigResolver.resolve(packagesToDeploy, document, Arrays.asList(TEST_INPUT_PACKAGE_A));
+
+        // THEN
+        Map<String, Object> servicesConfig = (Map<String, Object>) resolvedConfig.get(SERVICES_NAMESPACE_TOPIC);
+
+        assertThat("interpolateFromRecipe should be replaced with valueA",
+                getServiceConfiguration(TEST_INPUT_PACKAGE_A, servicesConfig).get("interpolateFromRecipe"),
+                equalTo("valueA"));
+        assertThat("interpolateFromDeployment should be replaced with kernel root path",
+                getServiceConfiguration(TEST_INPUT_PACKAGE_A, servicesConfig).get("interpolateFromDeployment"),
+                equalTo(DUMMY_ROOT_PATH.toAbsolutePath().toString()));
+        assertThat("interpolateFromRunningConfig should NOT be replaced",
+                getServiceConfiguration(TEST_INPUT_PACKAGE_A, servicesConfig).get("interpolateFromRunningConfig"),
+                equalTo("{artifacts:path}"));
+    }
+
+    @Test
     void GIVEN_deployment_WHEN_config_resolution_requested_THEN_work_path_interpolated() throws Exception {
         // GIVEN
         ComponentIdentifier rootComponentIdentifier =
