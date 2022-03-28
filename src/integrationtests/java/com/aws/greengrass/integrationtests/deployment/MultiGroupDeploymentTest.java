@@ -373,7 +373,7 @@ public class MultiGroupDeploymentTest extends BaseITCase {
                 .thenReturn(Optional.of(new HashSet<>(Arrays.asList("firstGroup", "secondGroup"))));
         submitSampleJobDocument(DeploymentServiceIntegrationTest.class.getResource("FleetConfigWithRedAndYellowService.json")
                 .toURI(), "firstGroup", Deployment.DeploymentType.IOT_JOBS);
-        assertTrue(firstGroupCDL.await(10, TimeUnit.SECONDS));
+        assertTrue(firstGroupCDL.await(1000, TimeUnit.SECONDS));
 
         //device gets removed from firstGroup,
         when(thingGroupHelper.listThingGroupsForDevice(anyInt()))
@@ -383,7 +383,7 @@ public class MultiGroupDeploymentTest extends BaseITCase {
         //rolling back will add back red signal/yellow signal. Mapping of groups to root components will also be restored.
         submitSampleJobDocument(DeploymentServiceIntegrationTest.class.getResource("FleetConfigWithBrokenService.json")
                 .toURI(), "secondGroup", Deployment.DeploymentType.IOT_JOBS);
-        assertTrue(secondGroupCDL.await(30, TimeUnit.SECONDS));
+        assertTrue(secondGroupCDL.await(3000, TimeUnit.SECONDS));
 
         Topics groupToRootTopic = kernel.getConfig().lookupTopics(SERVICES_NAMESPACE_TOPIC, DEPLOYMENT_SERVICE_TOPICS,
                 GROUP_TO_ROOT_COMPONENTS_TOPICS);

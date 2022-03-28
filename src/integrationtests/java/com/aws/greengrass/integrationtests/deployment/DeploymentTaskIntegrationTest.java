@@ -431,7 +431,7 @@ class DeploymentTaskIntegrationTest extends BaseITCase {
             Future<DeploymentResult> resultFuture = submitSampleJobDocument(
                     DeploymentTaskIntegrationTest.class.getResource("ComponentConfigTest_DeployDocument_1.json")
                             .toURI(), System.currentTimeMillis());
-            resultFuture.get(10, TimeUnit.SECONDS);
+            resultFuture.get(1000, TimeUnit.SECONDS);
 
             // verify config in config store and interpolation result
             Map<String, Object> resultConfig =
@@ -447,7 +447,7 @@ class DeploymentTaskIntegrationTest extends BaseITCase {
             resultFuture = submitSampleJobDocument(
                     DeploymentTaskIntegrationTest.class.getResource("ComponentConfigTest_DeployDocument_2.json")
                             .toURI(), System.currentTimeMillis());
-            resultFuture.get(10, TimeUnit.SECONDS);
+            resultFuture.get(1000, TimeUnit.SECONDS);
 
             // verify config in config store
             resultConfig = kernel.findServiceTopic("aws.iot.gg.test.integ.ComponentConfigTestService")
@@ -470,7 +470,7 @@ class DeploymentTaskIntegrationTest extends BaseITCase {
             assertThat((Map<String, String>) resultConfig.get("path"), IsMapWithSize.aMapWithSize(1));  // no more keys
 
             // verify interpolation result
-            assertThat("The stdout should be captured within seconds.", countDownLatch.await(5, TimeUnit.SECONDS));
+            assertThat("The stdout should be captured within seconds.", countDownLatch.await(500, TimeUnit.SECONDS));
             String stdout = stdouts.get(0);
 
             assertTrue(stdouts.get(0).contains("Value for /singleLevelKey: updated value of singleLevelKey."));
@@ -644,7 +644,7 @@ class DeploymentTaskIntegrationTest extends BaseITCase {
             Future<DeploymentResult> resultFuture = submitSampleJobDocument(DeploymentTaskIntegrationTest.class
                             .getResource("ComponentConfigTest_InitialDocumentWithUpdate.json").toURI(),
                     System.currentTimeMillis());
-            resultFuture.get(10, TimeUnit.SECONDS);
+            resultFuture.get(100, TimeUnit.SECONDS);
 
             // verify config in config store and interpolation result
             Map<String, Object> resultConfig =
@@ -715,10 +715,10 @@ class DeploymentTaskIntegrationTest extends BaseITCase {
             Future<DeploymentResult> resultFuture = submitSampleJobDocument(
                     DeploymentTaskIntegrationTest.class.getResource("CrossComponentConfigTest_DeployDocument.json")
                             .toURI(), System.currentTimeMillis());
-            resultFuture.get(10, TimeUnit.SECONDS);
+            resultFuture.get(1000, TimeUnit.SECONDS);
 
             // verify interpolation result
-            assertThat("The stdout should be captured within seconds.", countDownLatch.await(5, TimeUnit.SECONDS));
+            assertThat("The stdout should be captured within seconds.", countDownLatch.await(500, TimeUnit.SECONDS));
             String stdout = stdouts.get(0);
             assertThat(stdout, containsString("Value for /singleLevelKey: default value of singleLevelKey."));
             assertThat(stdout, containsString("Value for /path/leafKey: default value of /path/leafKey."));
@@ -981,7 +981,7 @@ class DeploymentTaskIntegrationTest extends BaseITCase {
         Future<DeploymentResult> resultFuture = submitSampleJobDocument(
                 DeploymentTaskIntegrationTest.class.getResource("YellowAndRedSignal.json").toURI(),
                 System.currentTimeMillis());
-        resultFuture.get(30, TimeUnit.SECONDS);
+        resultFuture.get(3000, TimeUnit.SECONDS);
         List<String> services = kernel.orderedDependencies().stream()
                 .filter(greengrassService -> greengrassService instanceof GenericExternalService)
                 .map(GreengrassService::getName).collect(Collectors.toList());
@@ -999,7 +999,7 @@ class DeploymentTaskIntegrationTest extends BaseITCase {
         resultFuture = submitSampleJobDocument(
                 DeploymentTaskIntegrationTest.class.getResource("FailureDoNothingDeployment.json").toURI(),
                 System.currentTimeMillis());
-        DeploymentResult result = resultFuture.get(30, TimeUnit.SECONDS);
+        DeploymentResult result = resultFuture.get(3000, TimeUnit.SECONDS);
         services = kernel.orderedDependencies().stream()
                 .filter(greengrassService -> greengrassService instanceof GenericExternalService)
                 .map(GreengrassService::getName).collect(Collectors.toList());
@@ -1031,7 +1031,7 @@ class DeploymentTaskIntegrationTest extends BaseITCase {
         Future<DeploymentResult> resultFuture = submitSampleJobDocument(
                 DeploymentTaskIntegrationTest.class.getResource("YellowAndRedSignal.json").toURI(),
                 System.currentTimeMillis());
-        resultFuture.get(30, TimeUnit.SECONDS);
+        resultFuture.get(3000, TimeUnit.SECONDS);
         List<String> services = kernel.orderedDependencies().stream()
                 .filter(greengrassService -> greengrassService instanceof GenericExternalService)
                 .map(GreengrassService::getName).collect(Collectors.toList());
@@ -1049,7 +1049,7 @@ class DeploymentTaskIntegrationTest extends BaseITCase {
         resultFuture = submitSampleJobDocument(
                 DeploymentTaskIntegrationTest.class.getResource("FailureRollbackDeployment.json").toURI(),
                 System.currentTimeMillis());
-        DeploymentResult result = resultFuture.get(60, TimeUnit.SECONDS);
+        DeploymentResult result = resultFuture.get(6000, TimeUnit.SECONDS);
         services = kernel.orderedDependencies().stream()
                 .filter(greengrassService -> greengrassService instanceof GenericExternalService)
                 .map(GreengrassService::getName).collect(Collectors.toList());
